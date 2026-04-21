@@ -1,5 +1,5 @@
 const NodeCache = require('node-cache');
-const { bcryptVerify, bcrypt } = require('hash-wasm');
+const bcrypt = require('bcryptjs');
 const { randomFillSync } = require('crypto');
 const Bitbucket = require('./models/Bitbucket');
 const getRedisClient = require('./redis');
@@ -73,16 +73,12 @@ function Auth(config, stuff) {
 
   this.hasher = config.hashPassword !== false ? {
     hash(password) {
-      const salt = new Uint8Array(16);
-      randomFillSync(salt);
+      const salt = bcrypt.genSaltSync(10);
 
-      return bcrypt({
-        password,
-        salt,
-      });
+      return bcrypt.hash(password, salt);
     },
     verify(options) {
-      return bcryptVerify(options);
+      return bcrypt.compare(options.password, options.hash);
     },
   } : {
     hash(password) {
